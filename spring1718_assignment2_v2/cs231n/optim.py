@@ -141,7 +141,10 @@ def adam(w, dw, config=None):
     # NOTE: In order to match the reference output, please modify t _before_  #
     # using it in any calculations.                                           #
     ###########################################################################
-
+    config['m'] = config['beta1'] * config['m'] + (1 - config['beta1']) * dw
+    config['v'] = config['beta2'] * config['v'] + (1 - config['beta2']) * (dw ** 2)
+    # /= 1 - config['beta1'] ** config['t']
+    next_w = w - config['learning_rate'] * config['m'] / (np.sqrt(config['v']) + config['epsilon'])
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################

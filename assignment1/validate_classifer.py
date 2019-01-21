@@ -3,7 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from cs231n.data_utils import load_CIFAR10
-cifar10_path = 'cifar-10-batches-py'
+cifar10_path = 'cs231n/datasets/cifar-10-batches-py'
 X_train, y_train, X_test, y_test = load_CIFAR10(cifar10_path)
 num_training = 50000   # 训练集大小
 mask = np.random.choice(50000, 5000, replace=False)
