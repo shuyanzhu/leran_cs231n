@@ -228,14 +228,9 @@ class FullyConnectedNet(object):
         # behave differently during training and testing.
         if self.use_dropout:
             self.dropout_param['mode'] = mode
-        if self.normalization=='batchnorm':
+        if self.normalization == 'batchnorm':
             for bn_param in self.bn_params:
                 bn_param['mode'] = mode
-        if self.normalization == 'layernorm':  # gamma[N x 1], beta[N x 1]被需要
-            if 'beta1' not in self.params:
-                for i in range(self.num_layers)
-                    self.params.setdefault('gamma%d' % (i + 1), np.ones(X.shape[0]))
-                    self.params.setdefault('beta%d' % (i + 1), np.zeros(X.shape[0]))
         scores = None
         ############################################################################
         # TODO: Implement the forward pass for the fully-connected net, computing  #
@@ -260,6 +255,8 @@ class FullyConnectedNet(object):
                 out, cache['b'] = batchnorm_forward(out, self.params['gamma%d' % (i + 1)], self.params['beta%d' % (i + 1)],
                                                     self.bn_params[i])
             out, cache['r'] = relu_forward(out)
+            if self.use_dropout:
+                out, cache['drop'] = dropout_forward(out, self.dropout_param)
             layer_caches.append(cache)
         out, cache = affine_forward(out, self.params['W' + str(int(self.num_layers))], self.params['b' + str(int(self.num_layers))])
         layer_caches.append(cache)
@@ -297,6 +294,8 @@ class FullyConnectedNet(object):
             Wi = self.params['W' + stri]
             loss += 0.5 * self.reg * np.sum(Wi * Wi)
             cache = layer_caches.pop()
+            if self.use_dropout:
+                dx = dropout_backward(dx, cache['drop'])
             dx = relu_backward(dx, cache['r'])
             if self.normalization == 'batchnorm':
                 dx, dgamma, dbeta = batchnorm_backward(dx, cache['b'])
