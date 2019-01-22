@@ -30,10 +30,6 @@ grad_check_sparse(f, W, grad)
 from cs231n.classifiers import Softmax
 classifer = Softmax()
 loss_hist = classifer.train(X_train, y_train, verbose=True,num_iters=5000, batch_size=100)
-plt.plot(loss_hist)
-plt.xlabel('Step')
-plt.ylabel('Loss')
-plt.show()
 # 泛化准确率
 y_pred = classifer.predict(X_test)
 accuracy = np.mean(y_pred == y_test)
