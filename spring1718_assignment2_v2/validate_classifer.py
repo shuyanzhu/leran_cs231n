@@ -1,5 +1,6 @@
 # coding=utf-8
 # 加载数据
+import platform
 import numpy as np
 import matplotlib.pyplot as plt
 from cs231n.classifiers.cnn import *
@@ -31,6 +32,10 @@ solver = Solver(classifer, small_data,
                 update_rule='adam', optim_config={'learning_rate': 1e-4},
                 verbose=True, print_every=10000
                 )
+solver.train()
+y_pred = np.argmax(classifer.loss(small_data['X_test']), axis=1)
+accuracy = np.mean(small_data['y_test'] == y_pred)
+print('Test accuracy:', accuracy)
 # num_training = 50000   # 训练集大小
 # mask = np.random.choice(50000, 5000, replace=False)
 # X_train = X_train[mask]
