@@ -1,6 +1,7 @@
 # coding=utf-8
 # 加载数据
 import platform
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 from cs231n.classifiers.cnn import *
@@ -17,7 +18,7 @@ for k, v in data.items():
     print('%s:' % k, v.shape)
 
 from cs231n.classifiers import cnn
-num_train = 500
+num_train = 50
 small_data = {
     'X_train': data['X_train'][:num_train],
     'y_train': data['y_train'][:num_train],
@@ -26,13 +27,16 @@ small_data = {
     'X_test': data['X_test'],
     'y_test': data['y_test']
 }
-classifer = ThreeLayerConvNet(hidden_dim=200, weight_scale=1e-2, reg=0.001)
-solver = Solver(classifer, small_data,
-                num_epochs=20, batch_size=100,
-                update_rule='adam', optim_config={'learning_rate': 1e-4},
-                verbose=True, print_every=10000
+classifer = ThreeLayerConvNet(hidden_dim=100, weight_scale=1e-2, reg=0.001)  # cnn architecture, spatial batchnorm, etc.
+solver = Solver(classifer, small_data,  # data
+                num_epochs=5, batch_size=100,  # forward and backward pass
+                update_rule='adam', optim_config={'learning_rate': 1e-4},  # update configure
+                verbose=True, print_every=10000  # visualizing configure
                 )
+tic = time.time()
 solver.train()
+toc = time.time()
+print("Train time: %fs" % (toc - tic))
 y_pred = np.argmax(classifer.loss(small_data['X_test']), axis=1)
 accuracy = np.mean(small_data['y_test'] == y_pred)
 print('Test accuracy:', accuracy)
