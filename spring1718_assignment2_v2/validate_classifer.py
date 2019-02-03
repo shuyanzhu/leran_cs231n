@@ -29,7 +29,7 @@ small_data = {
 }
 classifer = ThreeLayerConvNet(hidden_dim=100, weight_scale=1e-2, reg=0.001)  # cnn architecture, spatial batchnorm, etc.
 solver = Solver(classifer, small_data,  # data
-                num_epochs=5, batch_size=100,  # forward and backward pass
+                num_epochs=15, batch_size=100,  # forward and backward pass
                 update_rule='adam', optim_config={'learning_rate': 1e-4},  # update configure
                 verbose=True, print_every=10000  # visualizing configure
                 )

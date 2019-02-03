@@ -742,12 +742,13 @@ def spatial_groupnorm_forward(x, gamma, beta, G, gn_param):
     ###########################################################################
     N, C, H, W = x.shape
     x = np.reshape(x, (N * G, C//G * H * W))
+
     sample_mean = np.mean(x, axis=1, keepdims=True)
     sample_var = np.var(x, axis=1, keepdims=True)
     x_hat = (x - sample_mean) / np.sqrt(sample_var + eps)
-    x_hat = x_hat.reshape(N, C, H, W)
-    out = x_hat * gamma[None, :, None, None] + beta[:, None, None, None]
-    out = np.transpose(1, 0, 2, 3)
+    out = x_hat.reshape(N, C, H, W) * gamma + beta
+    # out = gamma[np.newaxis, :, np.newaxis, np.newaxis] * xhat + beta[np.newaxis, :, np.newaxis, np.newaxis]
+    cache = (x, sample_mean, sample_var, eps, x_hat, gamma)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -773,7 +774,20 @@ def spatial_groupnorm_backward(dout, cache):
     # TODO: Implement the backward pass for spatial group normalization.      #
     # This will be extremely similar to the layer norm implementation.        #
     ###########################################################################
-    pass
+    x, sample_mean, sample_var, eps, x_hat, gamma = cache
+    N, C, H, W = dout.shape
+    print(dout.shape)
+    dbeta = np.sum(dout, axis=(0, 2, 3), keepdims=True)
+    dgamma = np.sum(x_hat.reshape(N, C, H, W) * dout, axis=(0, 2, 3), keepdims=True)
+    dout = dout * gamma
+    dout = np.reshape(dout, x.shape)
+    print(dout.shape)
+    NN = x.shape[1]
+    dsigma = np.sum(dout * (x - sample_mean) * -0.5 * (sample_var + eps) ** -1.5, axis=1, keepdims=True)
+    dmu = np.sum(dout / - np.sqrt(sample_var + eps), axis=1, keepdims=True)
+    dx = dout / np.sqrt(sample_var + eps) + dsigma * (x - sample_mean - np.sum(x - sample_mean, axis=1, keepdims=True) / NN) * 2 / NN + dmu / NN
+    print(dout.shape)
+    dx = dx.reshape(N, C, H, W)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
