@@ -49,7 +49,7 @@ print('Validation labels shape: ', y_val.shape)
 print('Test data shape: ', X_test.shape)
 print('Test labels shape: ', y_test.shape)
 
-
+# 数据采样
 class Dataset(object):
     def __init__(self, X, y, batch_size, shuffle=False):
         """
@@ -153,6 +153,7 @@ def test_flatten():
         print('x_flat_np:\n', x_flat_np)
 
 
+# 卷积神经网络
 def three_layer_convnet(x, params):
     """
     A three-layer convolutional network with the architecture described above.
@@ -186,14 +187,88 @@ def three_layer_convnet(x, params):
     conv_w2_out = tf.nn.conv2d(conv1_out, conv_w2, strides=[1, 1, 1, 1], padding='SAME')
     conv_b2_out = tf.nn.bias_add(conv_w2_out, conv_b2)
     conv2_out = tf.nn.relu(conv_b2_out)
-    fc_input = flatten(conv_b2_out)
+    fc_input = flatten(conv2_out)
     scores = tf.add(tf.matmul(fc_input, fc_w), fc_b)
     ############################################################################
     #                              END OF YOUR CODE                            #
     ############################################################################
     return scores
+def three_layer_convnet_init():
+    """
+    Initialize the weights of a Three-Layer ConvNet, for use with the
+    three_layer_convnet function defined above.
+
+    Inputs: None
+
+    Returns a list containing:
+    - conv_w1: TensorFlow Variable giving weights for the first conv layer
+    - conv_b1: TensorFlow Variable giving biases for the first conv layer
+    - conv_w2: TensorFlow Variable giving weights for the second conv layer
+    - conv_b2: TensorFlow Variable giving biases for the second conv layer
+    - fc_w: TensorFlow Variable giving weights for the fully-connected layer
+    - fc_b: TensorFlow Variable giving biases for the fully-connected layer
+    """
+    params = None
+    ############################################################################
+    # TODO: Initialize the parameters of the three-layer network.              #
+    ############################################################################
+    conv_w1 = tf.Variable(kaiming_normal((5, 5, 3, 6)))
+    conv_b1 = tf.Variable(tf.constant(0, shape=(6,)))
+    conv_w2 = tf.Variable(kaiming_normal((3, 3, 6, 9)))
+    conv_b2 = tf.Variable(tf.constant(0, shape=(9,)))
+    fc_w = tf.Variable(kaiming_normal((32 * 32 * 9, 10)))
+    fc_b = tf.Variable(tf.constant(0, shape=(10,)))
+    params = [conv_w1, conv_b1, conv_w2, conv_b2, fc_w, fc_b]
+    ############################################################################
+    #                             END OF YOUR CODE                             #
+    ############################################################################
+    return params
+
+# 全连接神经网络
+def two_layer_fc(x, params):
+    """
+    A fully-connected neural network; the architecture is:
+    fully-connected layer -> ReLU -> fully connected layer.
+    Note that we only need to define the forward pass here; TensorFlow will take
+    care of computing the gradients for us.
+
+    The input to the network will be a minibatch of data, of shape
+    (N, d1, ..., dM) where d1 * ... * dM = D. The hidden layer will have H units,
+    and the output layer will produce scores for C classes.
+
+    Inputs:
+    - x: A TensorFlow Tensor of shape (N, d1, ..., dM) giving a minibatch of
+      input data.
+    - params: A list [w1, w2] of TensorFlow Tensors giving weights for the
+      network, where w1 has shape (D, H) and w2 has shape (H, C).
+
+    Returns:
+    - scores: A TensorFlow Tensor of shape (N, C) giving classification scores
+      for the input data x.
+    """
+    w1, w2 = params  # Unpack the parameters
+    x = flatten(x)  # Flatten the input; now x has shape (N, D)
+    h = tf.nn.relu(tf.matmul(x, w1))  # Hidden layer: h has shape (N, H)
+    scores = tf.matmul(h, w2)  # Compute scores of shape (N, C)
+    return scores
+def two_layer_fc_init():
+    """
+    Initialize the weights of a two-layer network, for use with the
+    two_layer_network function defined above.
+
+    Inputs: None
+
+    Returns: A list of:
+    - w1: TensorFlow Variable giving the weights for the first layer
+    - w2: TensorFlow Variable giving the weights for the second layer
+    """
+    hidden_layer_size = 4000
+    w1 = tf.Variable(kaiming_normal((3 * 32 * 32, 4000)))
+    w2 = tf.Variable(kaiming_normal((4000, 10)))
+    return [w1, w2]
 
 
+# 前向传播和反向传播
 def training_step(scores, y, params, learning_rate):
     """
     Set up the part of the computational graph which makes a training step.
@@ -228,7 +303,8 @@ def training_step(scores, y, params, learning_rate):
 
     # Make a gradient descent step on all of the model parameters.
     new_weights = []
-    for w, grad_w in zip(params, grad_params):
+    for t, (w, grad_w) in enumerate(zip(params, grad_params)):
+        print(t, type(w), type(grad_w))
         new_w = tf.assign_sub(w, learning_rate * grad_w)
         new_weights.append(new_w)
 
@@ -237,7 +313,7 @@ def training_step(scores, y, params, learning_rate):
     with tf.control_dependencies(new_weights):
         return tf.identity(loss)
 
-
+# 更新和准确率
 def train_part2(model_fn, init_fn, learning_rate):
     """
     Train a model on CIFAR-10.
@@ -316,22 +392,9 @@ def kaiming_normal(shape):
     return tf.random_normal(shape) * np.sqrt(2.0 / fan_in)
 
 
-def two_layer_fc_init():
-    """
-    Initialize the weights of a two-layer network, for use with the
-    two_layer_network function defined above.
-
-    Inputs: None
-
-    Returns: A list of:
-    - w1: TensorFlow Variable giving the weights for the first layer
-    - w2: TensorFlow Variable giving the weights for the second layer
-    """
-    hidden_layer_size = 4000
-    w1 = tf.Variable(kaiming_normal((3 * 32 * 32, 4000)))
-    w2 = tf.Variable(kaiming_normal((4000, 10)))
-    return [w1, w2]
 
 if __name__ == '__main__':
-    learning_rate = 1e-2
-    train_part2(two_layer_fc, two_layer_fc_init, learning_rate)
+    learning_rate = 3e-3
+    train_part2(three_layer_convnet, three_layer_convnet_init, learning_rate)
+    # learning_rate = 1e-2
+    # train_part2(two_layer_fc, two_layer_fc_init, learning_rate)
