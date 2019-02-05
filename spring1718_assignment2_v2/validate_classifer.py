@@ -10,7 +10,8 @@ from cs231n.gradient_check import eval_numerical_gradient_array, eval_numerical_
 from cs231n.layers import *
 from cs231n.fast_layers import *
 from cs231n.solver import Solver
-
+import tensorflow as tf
+tf.keras.datasets.cifar10.load_data()
 cifar10_path = 'cs231n/datasets/cifar-10-batches-py'
 data = get_CIFAR10_data()
 
