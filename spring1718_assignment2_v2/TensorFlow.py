@@ -213,11 +213,11 @@ def three_layer_convnet_init():
     # TODO: Initialize the parameters of the three-layer network.              #
     ############################################################################
     conv_w1 = tf.Variable(kaiming_normal((5, 5, 3, 6)))
-    conv_b1 = tf.Variable(tf.constant(0, shape=(6,)))
+    conv_b1 = tf.Variable(tf.constant(0.0, shape=(6,)))
     conv_w2 = tf.Variable(kaiming_normal((3, 3, 6, 9)))
-    conv_b2 = tf.Variable(tf.constant(0, shape=(9,)))
+    conv_b2 = tf.Variable(tf.constant(0.0, shape=(9,)))
     fc_w = tf.Variable(kaiming_normal((32 * 32 * 9, 10)))
-    fc_b = tf.Variable(tf.constant(0, shape=(10,)))
+    fc_b = tf.Variable(tf.constant(0.0, shape=(10,)))
     params = [conv_w1, conv_b1, conv_w2, conv_b2, fc_w, fc_b]
     ############################################################################
     #                             END OF YOUR CODE                             #
