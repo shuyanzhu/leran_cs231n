@@ -463,27 +463,33 @@ def model_init_fn(inputs, is_training):
     ############################################################################
     # TODO: Construct a model that performs well on CIFAR-10                   #
     ############################################################################
+    ############################################################################
     hiddensize = 120
     num_classes = 10
     initializer = tf.variance_scaling_initializer(scale=2.0)
     conv1_output = tf.layers.conv2d(inputs, 6, [5, 5],
-                                   activation=tf.nn.relu)
+                                    activation=tf.nn.relu)
     pool1_output = tf.layers.max_pooling2d(conv1_output, [2, 2], [1, 1])
     conv2_output = tf.layers.conv2d(pool1_output, 16, [5, 5],
-                                   activation=tf.nn.relu)
-    pool2_output = tf.layers.max_pooling2d(conv2_output, 16, [5, 5],
-                                          activation=tf.nn.relu)
+                                    activation=tf.nn.relu)
+    pool2_output = tf.layers.max_pooling2d(conv2_output, [2, 2], [1, 1])
     flatten = tf.layers.flatten(pool2_output)
-    fc1 = tf.layers.dense(poo2_output, hiddensize, activation=tf.nn.relu
-                         kernel_initializer-initializer)
+    fc1 = tf.layers.dense(flatten, hiddensize, activation=tf.nn.relu,
+                          kernel_initializer=initializer)
     dropout = tf.layers.dropout(fc1, training=is_training)
-    net = tf.layers.dense(droupout, num_classes, kernel_initializer=initializer)
+    net = tf.layers.dense(dropout, num_classes, kernel_initializer=initializer)
+    #     initializer = tf.variance_scaling_initializer(scale=2.0)
+    #     flattened_inputs = tf.layers.flatten(inputs)
+    #     fc1_output = tf.layers.dense(flattened_inputs, hidden_size, activation=tf.nn.relu,
+    #                                  kernel_initializer=initializer)
+    #     net = tf.layers.dense(fc1_output, num_classes,
+    #                              kernel_initializer=initializer)
     ############################################################################
     #                            END OF YOUR CODE                              #
     ############################################################################
     return net
 
-
+learning_rate = 3e-3
 def optimizer_init_fn():
     optimizer = None
     ############################################################################
@@ -496,7 +502,7 @@ def optimizer_init_fn():
     return optimizer
 
 if __name__ == '__main__':
-    device = '/gpu:0'
+    device = '/cpu:0'
     print_every = 700
     num_epochs = 10
     train_part34(model_init_fn, optimizer_init_fn, num_epochs)
