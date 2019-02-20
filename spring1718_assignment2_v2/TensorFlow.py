@@ -358,7 +358,74 @@ def train_part2(model_fn, init_fn, learning_rate):
             if t % print_every == 0:
                 print('Iteration %d, loss = %.4f' % (t, loss_np))
                 check_accuracy(sess, val_dset, x, scores, is_training)
+def train_part34(model_init_fn, optimizer_init_fn, num_epochs=1):
+    """
+    Simple training loop for use with models defined using tf.keras. It trains
+    a model for one epoch on the CIFAR-10 training set and periodically checks
+    accuracy on the CIFAR-10 validation set.
 
+    Inputs:
+    - model_init_fn: A function that takes no parameters; when called it
+      constructs the model we want to train: model = model_init_fn()
+    - optimizer_init_fn: A function which takes no parameters; when called it
+      constructs the Optimizer object we will use to optimize the model:
+      optimizer = optimizer_init_fn()
+    - num_epochs: The number of epochs to train for
+
+    Returns: Nothing, but prints progress during trainingn
+    """
+    tf.reset_default_graph()
+    with tf.device(device):
+        # Construct the computational graph we will use to train the model. We
+        # use the model_init_fn to construct the model, declare placeholders for
+        # the data and labels
+        x = tf.placeholder(tf.float32, [None, 32, 32, 3])
+        y = tf.placeholder(tf.int32, [None])
+
+        # We need a place holder to explicitly specify if the model is in the training
+        # phase or not. This is because a number of layers behaves differently in
+        # training and in testing, e.g., dropout and batch normalization.
+        # We pass this variable to the computation graph through feed_dict as shown below.
+        is_training = tf.placeholder(tf.bool, name='is_training')
+
+        # Use the model function to build the forward pass.
+        scores = model_init_fn(x, is_training)
+
+        # Compute the loss like we did in Part II
+        loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y, logits=scores)
+        loss = tf.reduce_mean(loss)
+
+        # Use the optimizer_fn to construct an Optimizer, then use the optimizer
+        # to set up the training step. Asking TensorFlow to evaluate the
+        # train_op returned by optimizer.minimize(loss) will cause us to make a
+        # single update step using the current minibatch of data.
+
+        # Note that we use tf.control_dependencies to force the model to run
+        # the tf.GraphKeys.UPDATE_OPS at each training step. tf.GraphKeys.UPDATE_OPS
+        # holds the operators that update the states of the network.
+        # For example, the tf.layers.batch_normalization function adds the running mean
+        # and variance update operators to tf.GraphKeys.UPDATE_OPS.
+        optimizer = optimizer_init_fn()
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(update_ops):
+            train_op = optimizer.minimize(loss)
+
+    # Now we can run the computational graph many times to train the model.
+    # When we call sess.run we ask it to evaluate train_op, which causes the
+    # model to update.
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        t = 0
+        for epoch in range(num_epochs):
+            print('Starting epoch %d' % epoch)
+            for x_np, y_np in train_dset:
+                feed_dict = {x: x_np, y: y_np, is_training: 1}
+                loss_np, _ = sess.run([loss, train_op], feed_dict=feed_dict)
+                if t % print_every == 0:
+                    print('Iteration %d, loss = %.4f' % (t, loss_np))
+                    check_accuracy(sess, val_dset, x, scores, is_training=is_training)
+                    print()
+                t += 1
 
 def check_accuracy(sess, dset, x, scores, is_training=None):
     """
@@ -391,10 +458,49 @@ def kaiming_normal(shape):
         fan_in, fan_out = np.prod(shape[:3]), shape[3]
     return tf.random_normal(shape) * np.sqrt(2.0 / fan_in)
 
+def model_init_fn(inputs, is_training):
+    model = None
+    ############################################################################
+    # TODO: Construct a model that performs well on CIFAR-10                   #
+    ############################################################################
+    hiddensize = 120
+    num_classes = 10
+    initializer = tf.variance_scaling_initializer(scale=2.0)
+    conv1_output = tf.layers.conv2d(inputs, 6, [5, 5],
+                                   activation=tf.nn.relu)
+    pool1_output = tf.layers.max_pooling2d(conv1_output, [2, 2], [1, 1])
+    conv2_output = tf.layers.conv2d(pool1_output, 16, [5, 5],
+                                   activation=tf.nn.relu)
+    pool2_output = tf.layers.max_pooling2d(conv2_output, 16, [5, 5],
+                                          activation=tf.nn.relu)
+    flatten = tf.layers.flatten(pool2_output)
+    fc1 = tf.layers.dense(poo2_output, hiddensize, activation=tf.nn.relu
+                         kernel_initializer-initializer)
+    dropout = tf.layers.dropout(fc1, training=is_training)
+    net = tf.layers.dense(droupout, num_classes, kernel_initializer=initializer)
+    ############################################################################
+    #                            END OF YOUR CODE                              #
+    ############################################################################
+    return net
 
+
+def optimizer_init_fn():
+    optimizer = None
+    ############################################################################
+    # TODO: Construct an optimizer that performs well on CIFAR-10              #
+    ############################################################################
+    optimizer = tf.train.MomentumOptimizer(learning_rate, 0.9, use_nesterov=True)
+    ############################################################################
+    #                            END OF YOUR CODE                              #
+    ############################################################################
+    return optimizer
 
 if __name__ == '__main__':
-    learning_rate = 3e-3
-    train_part2(three_layer_convnet, three_layer_convnet_init, learning_rate)
+    device = '/gpu:0'
+    print_every = 700
+    num_epochs = 10
+    train_part34(model_init_fn, optimizer_init_fn, num_epochs)
+    # learning_rate = 3e-3
+    # train_part2(three_layer_convnet, three_layer_convnet_init, learning_rate)
     # learning_rate = 1e-2
     # train_part2(two_layer_fc, two_layer_fc_init, learning_rate)
