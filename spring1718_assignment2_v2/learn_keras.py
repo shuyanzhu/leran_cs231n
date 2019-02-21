@@ -25,19 +25,26 @@ print('Test data size', X_test.shape)
 print('Test labels size', y_test.shape)
 # 建立模型
 inputs = tf.keras.Input(shape=(32, 32, 3))
-x = tf.layers.Conv2D(64, [5, 5], activation='relu',)(inputs)
+x = tf.layers.BatchNormalization()(inputs)
+x = tf.layers.Conv2D(32, [5, 5], activation='relu', padding='same')(x)
 x = tf.layers.MaxPooling2D([2, 2], [1, 1])(x)
-x = tf.layers.Conv2D(64, [3, 3], activation='relu')(x)
+x = tf.layers.BatchNormalization()(x)
+x = tf.layers.Conv2D(64, [5, 5], activation='relu', padding='same')(x)
+x = tf.layers.MaxPooling2D([2, 2], [1, 1])(x)
+x = tf.layers.BatchNormalization()(x)
+x = tf.layers.Conv2D(128, [3, 3], activation='relu', padding='same')(x)
 x = tf.layers.MaxPooling2D([2, 2], [1, 1])(x)
 x = tf.layers.Flatten()(x)
 x = tf.layers.Dropout()(x)
-x = tf.layers.Dense(100, activation='relu')(x)
+x = tf.layers.BatchNormalization()(x)
+x = tf.layers.Dense(120, activation='relu')(x)
 x = tf.layers.Dropout()(x)
+x = tf.layers.BatchNormalization()(x)
 predictions = tf.layers.Dense(10, activation='softmax')(x)
 
 model  = tf.keras.Model(inputs=inputs, outputs=predictions)
-model.compile(optimizer=tf.train.AdamOptimizer(4e-4),
+model.compile(optimizer=tf.train.AdamOptimizer(8e-5),
               loss=tf.keras.losses.sparse_categorical_crossentropy,
               metrics=['accuracy'])
 # 训练模型
-model.fit(X_train, y_train, batch_size=64, epochs=10)
+model.fit(X_train, y_train, batch_size=64, epochs=10, validation_data=(X_val, y_val))
