@@ -78,7 +78,7 @@ val_dset = Dataset(X_val, y_val, batch_size=64, shuffle=False)
 test_dset = Dataset(X_test, y_test, batch_size=64)
 
 # Set up some global variables
-USE_GPU = False
+USE_GPU = False 
 
 if USE_GPU:
     device = '/device:GPU:0'
@@ -88,7 +88,6 @@ else:
 # Constant to control how often we print when training models
 print_every = 100
 
-print('Using device: ', device)
 
 
 def flatten(x):
@@ -467,17 +466,18 @@ def model_init_fn(inputs, is_training):
     hiddensize = 120
     num_classes = 10
     initializer = tf.variance_scaling_initializer(scale=2.0)
-    conv1_output = tf.layers.conv2d(inputs, 6, [5, 5],
+    conv1_output = tf.layers.conv2d(inputs, 64, [5, 5],
                                     activation=tf.nn.relu)
     pool1_output = tf.layers.max_pooling2d(conv1_output, [2, 2], [1, 1])
-    conv2_output = tf.layers.conv2d(pool1_output, 16, [5, 5],
+    conv2_output = tf.layers.conv2d(pool1_output, 64, [3, 3],
                                     activation=tf.nn.relu)
     pool2_output = tf.layers.max_pooling2d(conv2_output, [2, 2], [1, 1])
     flatten = tf.layers.flatten(pool2_output)
-    fc1 = tf.layers.dense(flatten, hiddensize, activation=tf.nn.relu,
+    dropout1 = tf.layers.dropout(flatten, training=is_training)
+    fc1 = tf.layers.dense(dropout1, hiddensize, activation=tf.nn.relu,
                           kernel_initializer=initializer)
-    dropout = tf.layers.dropout(fc1, training=is_training)
-    net = tf.layers.dense(dropout, num_classes, kernel_initializer=initializer)
+    dropout2 = tf.layers.dropout(fc1, training=is_training)
+    net = tf.layers.dense(dropout2, num_classes, kernel_initializer=initializer)
     #     initializer = tf.variance_scaling_initializer(scale=2.0)
     #     flattened_inputs = tf.layers.flatten(inputs)
     #     fc1_output = tf.layers.dense(flattened_inputs, hidden_size, activation=tf.nn.relu,
@@ -489,22 +489,24 @@ def model_init_fn(inputs, is_training):
     ############################################################################
     return net
 
-learning_rate = 3e-3
+learning_rate = 2e-3
 def optimizer_init_fn():
     optimizer = None
     ############################################################################
     # TODO: Construct an optimizer that performs well on CIFAR-10              #
     ############################################################################
     optimizer = tf.train.MomentumOptimizer(learning_rate, 0.9, use_nesterov=True)
+    #optimizer = tf.train.AdamOptimizer(learning_rate)
     ############################################################################
     #                            END OF YOUR CODE                              #
     ############################################################################
     return optimizer
 
 if __name__ == '__main__':
-    device = '/cpu:0'
+    device = '/gpu:0'
+    print('Using device: ', device)
     print_every = 700
-    num_epochs = 10
+    num_epochs = 20
     train_part34(model_init_fn, optimizer_init_fn, num_epochs)
     # learning_rate = 3e-3
     # train_part2(three_layer_convnet, three_layer_convnet_init, learning_rate)
