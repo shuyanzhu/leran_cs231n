@@ -166,4 +166,5 @@ def train_part34(model_init_fn, num_epochs=1):
                     t += 1
                 except tf.errors.OutOfRangeError:
                     break
-train_part34(inference, 20)
+if __name__ == '__main__':
+    train_part34(inference, 20)
