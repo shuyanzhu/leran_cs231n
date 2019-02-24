@@ -25,7 +25,6 @@ def load_cifar10():
     print('Test data size', X_test.shape)
     print('Test labels size', y_test.shape)
     return X_train, y_train, X_val, y_val, X_test, y_test
-X_train, y_train, X_val, y_val, X_test, y_test = load_cifar10()
 # 建立模型
 def inference(inputs):
     x = tf.layers.BatchNormalization()(inputs)
@@ -38,64 +37,8 @@ def inference(inputs):
     x = tf.layers.Dense(120, activation='relu')(x)
     x = tf.layers.Dropout()(x)
     x = tf.layers.BatchNormalization()(x)
-    net = tf.layers.Dense(10)(x)
-    return net
-def gen_batch(features, labels):
-    x = tf.placeholder(features.dtype, features.shape)
-    y = tf.placeholder(labels.dtype, labels.shape)
-    dset = tf.data.Dataset.from_tensor_slices((x, y))
-    batch_dset = dset.batch(100)
-
-    iterator = batch_dset.make_initializable_iterator()
-    xs, ys = iterator.get_next()
-    return x, y, iterator.initializer, xs, ys
-class Dataset(object):
-    def __init__(self, X, y, batch_size, shuffle=False):
-        """
-        Construct a Dataset object to iterate over data X and labels y
-
-        Inputs:
-        - X: Numpy array of data, of any shape
-        - y: Numpy array of labels, of any shape but with y.shape[0] == X.shape[0]
-        - batch_size: Integer giving number of elements per minibatch
-        - shuffle: (optional) Boolean, whether to shuffle the data on each epoch
-        """
-        assert X.shape[0] == y.shape[0], 'Got different numbers of data and labels'
-        self.X, self.y = X, y
-        self.batch_size, self.shuffle = batch_size, shuffle
-
-    def __iter__(self):
-        N, B = self.X.shape[0], self.batch_size
-        idxs = np.arange(N)
-        if self.shuffle:
-            np.random.shuffle(idxs)
-        return iter((self.X[i:i + B], self.y[i:i + B]) for i in range(0, N, B))
-val_dset = Dataset(X_val, y_val, batch_size=64, shuffle=False)
-def check_accuracy(sess, dset, x, scores, is_training=None):
-    """
-    Check accuracy on a classification model.
-
-    Inputs:
-    - sess: A TensorFlow Session that will be used to run the graph
-    - dset: A Dataset object on which to check accuracy
-    - x: A TensorFlow placeholder Tensor where input images should be fed
-    - scores: A TensorFlow Tensor representing the scores output from the
-      model; this is the Tensor we will ask TensorFlow to evaluate.
-
-    Returns: Nothing, but prints the accuracy of the model
-    """
-    num_correct, num_samples = 0, 0
-    for x_batch, y_batch in dset:
-        feed_dict = {x: x_batch, is_training: 0}
-        scores_np = sess.run(scores, feed_dict=feed_dict)
-        y_pred = scores_np.argmax(axis=1)
-        num_samples += x_batch.shape[0]
-        num_correct += (y_pred == y_batch).sum()
-    acc = float(num_correct) / num_samples
-    print('Got %d / %d correct (%.2f%%)' % (num_correct, num_samples, 100 * acc))
-print_every = 50
-device = '/cpu:0'
-def train_part34(model_init_fn, num_epochs=1):
+    outputs = tf.layers.Dense(10, activation='softmax')(x)
+    return outputs
     """
     Simple training loop for use with models defined using tf.keras. It trains
     a model for one epoch on the CIFAR-10 training set and periodically checks
@@ -167,4 +110,16 @@ def train_part34(model_init_fn, num_epochs=1):
                 except tf.errors.OutOfRangeError:
                     break
 if __name__ == '__main__':
-    train_part34(inference, 20)
+    # 导入数据
+    X_train, y_train, X_val, y_val, X_test, y_test = load_cifar10()
+    train_dset = tf.data.Dataset.from_tensor_slices((X_train, y_train))
+    validation_dset = tf.data.Dataset.from_tensor_slices((X_val, y_val))
+    # 构建模型
+    inputs = tf.keras.Inputs(shape=(32, 32, 3))
+    model = tf.keras.Model(inputs=inputs, inference(inputs))
+    model.compile(optimizer=tf.train.AdamOptimizer(5e-4),
+                loss = 'sparse_categorical_crossentropy',
+                metrics=['accuracy'])
+    model.fit(train_dset, batch_size=64, epochs=5)
+    
+    
