@@ -43,13 +43,18 @@ if __name__ == '__main__':
     # 导入数据
     X_train, y_train, X_val, y_val, X_test, y_test = load_cifar10()
     train_dset = tf.data.Dataset.from_tensor_slices((X_train, y_train))
+    train_dset = train_dset.batch(64).repeat()
     validation_dset = tf.data.Dataset.from_tensor_slices((X_val, y_val))
+    validation_dset = validation_dset.batch(64).repeat()
     # 构建模型
     inputs = tf.keras.Input(shape=(32, 32, 3))
-    model = tf.keras.Model(inputs=inputs, outputs=inference(inputs))
+    outputs=inference(inputs)
+    model = tf.keras.Model(inputs=inputs, outputs=outputs)
     model.compile(optimizer=tf.train.AdamOptimizer(5e-4),
                 loss = 'sparse_categorical_crossentropy',
                 metrics=['accuracy'])
-    model.fit(train_dset, batch_size=64, epochs=5, validation_data=validation_dset)
+    checkpoint = tf.keras.callbacks.ModelCheckpoint('./model-{epoch:02d}.hdf5', monitor='val_acc', save_best_only=True, verbose=1)
+    history = model.fit(train_dset, epochs=5, steps_per_epoch=49000//64, validation_data = validation_dset, validation_steps=1000//64, callbacks=[checkpoint])
+    print(history.history)
     
     
