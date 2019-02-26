@@ -4,6 +4,8 @@ requirements.txt
 .idea/*
 *.pyc
 *.xml
+*.hdf5
+test
 *.iml
 cifar-10-batches-py/*
 tiny-imagenet-100-A*

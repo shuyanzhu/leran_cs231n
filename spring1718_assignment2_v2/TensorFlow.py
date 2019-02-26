@@ -406,7 +406,6 @@ def train_part34(model_init_fn, optimizer_init_fn, num_epochs=1):
         # and variance update operators to tf.GraphKeys.UPDATE_OPS.
         optimizer = optimizer_init_fn()
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        print(update_ops)
         with tf.control_dependencies(update_ops):
             train_op = optimizer.minimize(loss)
 
@@ -463,18 +462,7 @@ def model_init_fn(inputs, is_training):
     ############################################################################
     # TODO: Construct a model that performs well on CIFAR-10                   #
     ############################################################################
-    ############################################################################\
-    # x = tf.layers.BatchNormalization()(inputs)
-    # x = tf.layers.Conv2D(16, [5, 5], activation='relu', padding='same')(x)
-    # x = tf.layers.BatchNormalization()(x)
-    # x = tf.layers.Conv2D(32, [3, 3], activation='relu', padding='same')(x)
-    # x = tf.layers.Flatten()(x)
-    # x = tf.layers.Dropout()(x)
-    # x = tf.layers.BatchNormalization()(x)
-    # x = tf.layers.Dense(120, activation='relu')(x)
-    # x = tf.layers.Dropout()(x)
-    # x = tf.layers.BatchNormalization()(x)
-    # net = tf.layers.Dense(10)(x)
+    ############################################################################
     hiddensize = 120
     num_classes = 10
     initializer = tf.variance_scaling_initializer(scale=2.0)
@@ -486,11 +474,16 @@ def model_init_fn(inputs, is_training):
     pool2_output = tf.layers.max_pooling2d(conv2_output, [2, 2], [1, 1])
     flatten = tf.layers.flatten(pool2_output)
     dropout1 = tf.layers.dropout(flatten, training=is_training)
-    x = tf.layers.batch_normalization(dropout1, training=is_training)
-    fc1 = tf.layers.dense(x, hiddensize, activation=tf.nn.relu,
+    fc1 = tf.layers.dense(dropout1, hiddensize, activation=tf.nn.relu,
                           kernel_initializer=initializer)
     dropout2 = tf.layers.dropout(fc1, training=is_training)
     net = tf.layers.dense(dropout2, num_classes, kernel_initializer=initializer)
+    #     initializer = tf.variance_scaling_initializer(scale=2.0)
+    #     flattened_inputs = tf.layers.flatten(inputs)
+    #     fc1_output = tf.layers.dense(flattened_inputs, hidden_size, activation=tf.nn.relu,
+    #                                  kernel_initializer=initializer)
+    #     net = tf.layers.dense(fc1_output, num_classes,
+    #                              kernel_initializer=initializer)
     ############################################################################
     #                            END OF YOUR CODE                              #
     ############################################################################
@@ -510,9 +503,9 @@ def optimizer_init_fn():
     return optimizer
 
 if __name__ == '__main__':
-    device = '/cpu:0'
+    device = '/gpu:0'
     print('Using device: ', device)
-    print_every = 50
+    print_every = 700
     num_epochs = 20
     train_part34(model_init_fn, optimizer_init_fn, num_epochs)
     # learning_rate = 3e-3
